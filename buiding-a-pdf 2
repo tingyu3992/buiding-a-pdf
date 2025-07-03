@@ -1,0 +1,52 @@
+pip install chromadb
+import chromadb
+from chromadb.config import Settings
+from uuid import uuid4
+
+# 假設這是你自定義的嵌入函數（示意）
+class GeminiEmbeddingFunction:
+    def __call__(self, texts):
+        # 模擬嵌入向量（實際應接 Gemini API 或自定模型）
+        return [[float(len(t)) % 1.0 for _ in range(768)] for t in texts]
+
+def create_chroma_db(documents, path, name):
+    """
+    初始化 ChromaDB 資料庫、建立集合並將嵌入資料存入。
+
+    參數：
+        documents (List[str]): 分割後的文字區塊列表。
+        path (str): 資料庫儲存的資料夾路徑。
+        name (str): 資料庫集合名稱。
+
+    傳回：
+        chromadb.api.models.Collection.Collection: ChromaDB 的集合物件。
+    """
+    # 初始化 ChromaDB 客戶端
+    client = chromadb.Client(Settings(
+        chroma_db_impl="duckdb+parquet",
+        persist_directory=path
+    ))
+
+    # 建立或取得集合
+    if name in [c.name for c in client.list_collections()]:
+        collection = client.get_collection(name)
+    else:
+        collection = client.create_collection(name)
+
+    # 建立嵌入函數實例
+    embed_fn = GeminiEmbeddingFunction()
+
+    # 計算嵌入向量
+    embeddings = embed_fn(documents)
+
+    # 準備唯一 ID（UUID）
+    ids = [str(uuid4()) for _ in documents]
+
+    # 新增至集合
+    collection.add(
+        documents=documents,
+        embeddings=embeddings,
+        ids=ids
+    )
+
+    return collection
