@@ -1,0 +1,46 @@
+import re
+
+def split_text(text, max_chars=1000):
+    """
+    將輸入文字依段落進行分割，並控制每個區塊的最大字元數。
+    
+    參數：
+        text (str): 從 PDF 提取的完整文字
+        max_chars (int): 每個區塊的最大字元數限制（預設為 1000）
+        
+    傳回：
+        List[str]: 拆分後的文字區塊列表
+    """
+    paragraphs = re.split(r'\n\s*\n', text.strip())  # 以空行拆分段落
+    chunks = []
+    current_chunk = ""
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+        if len(current_chunk) + len(para) + 1 <= max_chars:
+            current_chunk += para + "\n"
+        else:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            if len(para) <= max_chars:
+                current_chunk = para + "\n"
+            else:
+                # 如果單段太長，則進一步用句號拆分
+                sentences = re.split(r'(?<=[。！？.!?])', para)
+                current_para = ""
+                for sentence in sentences:
+                    if len(current_para) + len(sentence) <= max_chars:
+                        current_para += sentence
+                    else:
+                        chunks.append(current_para.strip())
+                        current_para = sentence
+                if current_para:
+                    current_chunk = current_para + "\n"
+                else:
+                    current_chunk = ""
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks
