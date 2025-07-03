@@ -1,0 +1,21 @@
+def make_rag_prompt(query, relevant_passage):
+    """
+    根據使用者查詢與相關段落產生一個 RAG 提示字串。
+
+    參數：
+        query (str): 使用者的查詢問題。
+        relevant_passage (List[str]): 從 ChromaDB 檢索到的相關段落。
+
+    傳回：
+        str: 格式化後的提示文字。
+    """
+    context = "\n\n".join(relevant_passage).strip()
+    prompt = f"""基於以下資訊回答問題：
+
+[相關資訊]
+{context}
+
+[問題]
+{query}
+"""
+    return prompt
